@@ -22,3 +22,26 @@ class Category extends Model
         return $this->belongsToMany(Task::class);
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

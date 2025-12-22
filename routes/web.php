@@ -45,10 +45,32 @@ Route::post('/tasks/{taskId}/subtasks', [TaskController::class, 'storeSubtask'])
 Route::delete('/subtasks/{id}', [TaskController::class, 'destroySubtask'])
     ->middleware('auth');
 
+Route::post('/tasks/{taskId}/categories', [TaskController::class, 'attachCategory'])
+    ->middleware('auth');
+
+Route::delete('/tasks/{taskId}/categories/{categoryId}', [TaskController::class, 'detachCategory'])
+    ->middleware('auth');
 
 
 
+Route::patch('/subtasks/{id}', [TaskController::class, 'updateSubtask'])
+    ->middleware('auth');
 
+Route::post('/tasks', [TaskController::class, 'store'])
+    ->middleware('auth');
+
+Route::patch('/tasks/{taskId}/priority', [TaskController::class, 'updatePriority'])
+    ->middleware('auth');
+
+Route::post('/categories', [CategoryController::class, 'store'])
+    ->middleware('auth');
+
+
+Route::patch('/categories/{id}', [CategoryController::class, 'update'])
+    ->middleware('auth');
+
+Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])
+    ->middleware('auth');
 
 
 require __DIR__.'/auth.php';

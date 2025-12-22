@@ -24,16 +24,19 @@ class TaskController extends Controller
     public function index(Request $request)
     {
         $categoryId = $request->query('category_id');
+        $search = $request->query('q');
 
         $tasks = $this->taskService->getTasksForUser(
             $request->user(),
-            $categoryId
+            $categoryId,
+            $search
         );
 
         return response()->json([
             'tasks' => $tasks,
         ]);
     }
+
 
     /**
      * Ambil detail task (panel kanan)
@@ -151,5 +154,82 @@ class TaskController extends Controller
 
 
 
+    public function attachCategory(Request $request, int $taskId)
+    {
+        $validated = $request->validate([
+            'category_id' => 'required|integer'
+        ]);
+
+        $task = $this->taskService->attachCategory(
+            $request->user(),
+            $taskId,
+            $validated['category_id']
+        );
+
+        return response()->json(['task' => $task]);
+    }
+
+
+    public function detachCategory(Request $request, int $taskId, int $categoryId)
+    {
+        $task = $this->taskService->detachCategory(
+            $request->user(),
+            $taskId,
+            $categoryId
+        );
+
+        return response()->json(['task' => $task]);
+    }
+
+    public function updateSubtask(Request $request, int $id)
+    {
+        $validated = $request->validate([
+            'content' => 'required|string|max:255',
+        ]);
+
+        $subtask = $this->taskService->updateSubtask(
+            $request->user(),
+            $id,
+            $validated
+        );
+
+        return response()->json(['subtask' => $subtask]);
+    }
+
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+        ]);
+
+        $task = $this->taskService->createTask(
+            $request->user(),
+            $validated
+        );
+
+        return response()->json([
+            'task' => $task
+        ], 201);
+    }
+
+
+    public function updatePriority(Request $request, int $taskId)
+    {
+        $validated = $request->validate([
+            'priority' => 'nullable|integer|min:1|max:5',
+        ]);
+        
+        Log::info('validate debug', [$validated]);
+        
+        $task = $this->taskService->updatePriority(
+            $request->user(),
+            $taskId,
+            $validated['priority'] ?? null
+        );
+        
+        
+        return response()->json(['task' => $task]);
+    }
 
 }

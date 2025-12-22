@@ -10,10 +10,13 @@ use App\Models\Subtask;
 class TaskService
 {
     /**
-     * Ambil task list (kiri)
+     * Ambil task list (kiri) + search
      */
-    public function getTasksForUser(User $user, ?int $categoryId = null)
-    {
+    public function getTasksForUser(
+        User $user,
+        ?int $categoryId = null,
+        ?string $search = null
+    ) {
         $query = Task::query()
             ->where('user_id', $user->id)
             ->where('status', 'yet')
@@ -21,14 +24,27 @@ class TaskService
             ->orderBy('due', 'asc')
             ->orderBy('priority', 'desc');
 
+        // FILTER CATEGORY
         if ($categoryId) {
             $query->whereHas('categories', function ($q) use ($categoryId) {
                 $q->where('categories.id', $categoryId);
             });
         }
 
+        // 🔍 SEARCH (TITLE, NOTE, SUBTASK)
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                ->orWhere('note', 'like', "%{$search}%")
+                ->orWhereHas('subtasks', function ($s) use ($search) {
+                    $s->where('content', 'like', "%{$search}%");
+                });
+            });
+        }
+
         return $query->get();
     }
+
 
     /**
      * Ambil task pertama untuk auto-select
@@ -133,6 +149,103 @@ class TaskService
             ->firstOrFail();
 
         $subtask->delete();
+    }
+
+
+
+    public function attachCategory(User $user, int $taskId, int $categoryId)
+    {
+        $task = Task::where('id', $taskId)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        $task->categories()->syncWithoutDetaching([$categoryId]);
+
+        return $task->load('categories');
+    }
+
+
+    public function detachCategory(User $user, int $taskId, int $categoryId)
+    {
+        $task = Task::where('id', $taskId)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        $task->categories()->detach($categoryId);
+
+        return $task->load('categories');
+    }
+
+
+    public function updateSubtask(User $user, int $subtaskId, array $data)
+    {
+        $subtask = Subtask::where('id', $subtaskId)
+            ->whereHas('task', fn ($q) => $q->where('user_id', $user->id))
+            ->firstOrFail();
+
+        $subtask->update([
+            'content' => $data['content'] ?? $subtask->content,
+        ]);
+
+        return $subtask;
+    }
+
+
+    public function createTask(User $user, array $data)
+    {
+        return Task::create([
+            'title'    => $data['title'],
+            'status'   => 'yet',
+            'priority' => 3,
+            'user_id'  => $user->id,
+        ]);
+    }
+
+
+    public function updatePriority(User $user, int $taskId, $priority=null)
+    {
+        Log::info('task debug', [
+            'task_id' => $taskId, 'user_id' => $user->id
+        ]);
+        logger()->info('user id', [$user->id]);
+
+        $task = Task::where('id', $taskId)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+        
+        $task->priority = $priority; // bisa null
+        $task->save();
+
+        return $task;
+    }
+
+
+    public function getTasks(User $user, ?int $categoryId = null, ?string $search = null)
+    {
+        return Task::query()
+            ->where('user_id', $user->id)
+            ->where('status', 'yet')
+
+            // FILTER CATEGORY
+            ->when($categoryId, function ($q) use ($categoryId) {
+                $q->whereHas('categories', fn ($c) =>
+                    $c->where('categories.id', $categoryId)
+                );
+            })
+
+            // SEARCH
+            ->when($search, function ($q) use ($search) {
+                $q->where(function ($sub) use ($search) {
+                    $sub->where('title', 'like', "%{$search}%")
+                        ->orWhere('note', 'like', "%{$search}%")
+                        ->orWhereHas('subtasks', function ($s) use ($search) {
+                            $s->where('content', 'like', "%{$search}%");
+                        });
+                });
+            })
+
+            ->orderBy('created_at', 'desc')
+            ->get();
     }
 
 }
