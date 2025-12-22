@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Services\TaskService;
+use Illuminate\Support\Facades\Log;
 
 
 class TaskController extends Controller
@@ -62,5 +63,93 @@ class TaskController extends Controller
             'task' => $task,
         ]);
     }
+
+
+    /**
+     * Toggle status task (checkbox)
+     */
+    public function toggleStatus(Request $request, int $id)
+    {
+        // Log::info('user debug 3', [$request->user()]);
+        
+        $task = $this->taskService->toggleTaskStatus(
+            $request->user(),
+            $id
+        );
+
+        
+        return response()->json([
+            'task' => $task,
+        ]);
+    }
+
+
+    /**
+     * Update task detail (note / due)
+     */
+    public function updateDetail(Request $request, int $id)
+    {
+        $validated = $request->validate([
+            'note' => 'nullable|string',
+            'due'  => 'nullable|date',
+            'title' => 'nullable|string'
+        ]);
+
+        $task = $this->taskService->updateTaskDetail(
+            $request->user(),
+            $id,
+            $validated
+        );
+
+        return response()->json([
+            'task' => $task,
+        ]);
+    }
+
+    public function toggleSubtask(Request $request, int $id)
+    {
+        $subtask = $this->taskService->toggleSubtask(
+            $request->user(),
+            $id
+        );
+
+        return response()->json([
+            'subtask' => $subtask
+        ]);
+    }
+
+
+
+    public function storeSubtask(Request $request, int $taskId)
+    {
+        $validated = $request->validate([
+            'content' => 'required|string|max:255',
+        ]);
+
+        $subtask = $this->taskService->createSubtask(
+            $request->user(),
+            $taskId,
+            $validated['content']
+        );
+
+        return response()->json([
+            'subtask' => $subtask,
+        ], 201);
+    }
+
+    public function destroySubtask(Request $request, int $id)
+    {
+        $this->taskService->deleteSubtask(
+            $request->user(),
+            $id
+        );
+
+        return response()->json([
+            'message' => 'deleted'
+        ]);
+    }
+
+
+
 
 }
