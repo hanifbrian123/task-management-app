@@ -24,7 +24,6 @@ class CategoryController extends Controller
     }
     public function store(Request $request)
     {
-        Log::info('debug categories 1', ['user_id' => $request->user()->id]);
         $validated = $request->validate([
             'name' => 'required|string|max:50',
         ]);

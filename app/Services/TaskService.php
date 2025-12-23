@@ -15,14 +15,13 @@ class TaskService
     public function getTasksForUser(
         User $user,
         ?int $categoryId = null,
-        ?string $search = null
+        ?string $search = null,
+        string $sort = 'manual'
     ) {
         $query = Task::query()
             ->where('user_id', $user->id)
             ->where('status', 'yet')
-            ->with('categories')
-            ->orderBy('due', 'asc')
-            ->orderBy('priority', 'desc');
+            ->with('categories');
 
         // FILTER CATEGORY
         if ($categoryId) {
@@ -31,7 +30,7 @@ class TaskService
             });
         }
 
-        // 🔍 SEARCH (TITLE, NOTE, SUBTASK)
+        // SEARCH (TITLE, NOTE, SUBTASK)
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
@@ -42,8 +41,23 @@ class TaskService
             });
         }
 
+        // SORTING (SINGLE SOURCE OF TRUTH)
+        match ($sort) {
+            'due' => $query
+                ->orderByRaw('due IS NULL') // null di bawah
+                ->orderBy('due', 'asc'),
+
+            'created' => $query
+                ->orderBy('created_at', 'desc'),
+
+            default => $query
+                ->orderBy('position', 'asc')
+                ->orderBy('priority', 'desc'),
+        };
+
         return $query->get();
     }
+
 
 
     /**
@@ -54,6 +68,7 @@ class TaskService
         return Task::where('user_id', $user->id)
             ->where('status', 'yet')
             ->with(['categories', 'subtasks'])
+            ->orderBy('position', 'asc')
             ->orderBy('due', 'asc')
             ->orderBy('priority', 'desc')
             ->first();
@@ -247,5 +262,83 @@ class TaskService
             ->orderBy('created_at', 'desc')
             ->get();
     }
+
+    public function reorderTasks(User $user, array $taskIds)
+    {
+        foreach ($taskIds as $index => $taskId) {
+            Task::where('id', $taskId)
+                ->where('user_id', $user->id)
+                ->update(['position' => $index]);
+        }
+    }
+
+
+    public function reorderSubtasks(User $user, int $taskId, array $subtaskIds)
+    {
+        // pastikan task milik user
+        Task::where('id', $taskId)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        foreach ($subtaskIds as $index => $id) {
+            Subtask::where('id', $id)
+                ->where('task_id', $taskId)
+                ->update(['position' => $index]);
+        }
+    }
+
+    public function toggleStatus(Task $task)
+    {
+        if ($task->status === 'yet') {
+            $task->update([
+                'status' => 'done',
+                'completed_at' => now(),
+            ]);
+        } else {
+            $task->update([
+                'status' => 'yet',
+                'completed_at' => null,
+            ]);
+        }
+
+        return $task;
+    }
+    public function getCompletedTasksGrouped(User $user)
+    {
+        // // Log::info('Completed debug', ['class' => $task->completed_at);
+        // dd(
+        //     get_class($task->completed_at),
+        //     $task->completed_at
+        // );
+        // return Task::query()
+        //     ->where('user_id', $user->id)
+        //     ->where('status', 'done')
+        //     ->whereNotNull('completed_at') 
+        //     ->orderBy('completed_at', 'desc')
+        //     ->get()
+        //     ->groupBy(function ($task) {
+        //         return $task->completed_at->format('Y/m/d');
+        //     });
+
+        $task = Task::query()
+        //     ->where('user_id', $user->id)
+        //     ->where('status', 'done')
+        //     ->whereNotNull('completed_at') 
+        //     ->orderBy('completed_at', 'desc')
+        //     ->get()
+        //     ->groupBy(function ($task) {
+        //         return $task->completed_at->format('Y/m/d');
+        //     });
+        Log::info('Completed debug', ['class' => get_class($task->completed_at)]);
+
+        dd(
+            $task?->completed_at,
+            $task ? get_class($task->completed_at) : null
+        );
+    }
+
+
+
+
 
 }

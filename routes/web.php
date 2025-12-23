@@ -6,7 +6,7 @@ use App\Http\Controllers\TaskController;
 use App\Http\Controllers\CategoryController;
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('dashboard');
 });
 
 Route::get('/dashboard', function () {
@@ -23,7 +23,9 @@ Route::middleware('auth')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/tasks', [TaskController::class, 'index']);
     Route::get('/tasks/first', [TaskController::class, 'first']);
-    Route::get('/tasks/{id}', [TaskController::class, 'show']);
+    Route::get('/tasks/{id}', [TaskController::class, 'show'])
+    ->whereNumber('id')
+    ->middleware('auth');
     Route::patch('/tasks/{id}/toggle-status', [TaskController::class, 'toggleStatus']);
     Route::get('/test-toggle', function () {
         return view('test-toggle');
@@ -72,5 +74,12 @@ Route::patch('/categories/{id}', [CategoryController::class, 'update'])
 Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])
     ->middleware('auth');
 
+Route::post('/tasks/reorder', [TaskController::class, 'reorder'])
+->middleware('auth');
+
+Route::post('/tasks/{taskId}/subtasks/reorder', [TaskController::class, 'reorderSubtasks'])
+    ->middleware('auth');
+Route::get('/tasks/completed', [TaskController::class, 'completed'])
+    ->middleware('auth');
 
 require __DIR__.'/auth.php';

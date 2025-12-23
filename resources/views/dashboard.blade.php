@@ -39,36 +39,91 @@
 
             <!-- RIGHT: THREE DOTS -->
             <div class="ml-auto relative">
+                <!-- BUTTON ⋯ -->
                 <button
                     type="button"
                     class="text-gray-500 hover:text-gray-700 px-2"
-                    @click="showCategoryMenu = !showCategoryMenu"
+                    @click="showCategoryMenu = !showCategoryMenu; showSortMenu = false"
                 >
                     ⋯
                 </button>
 
+                <!-- MAIN MENU -->
                 <div
                     x-show="showCategoryMenu"
-                    @click.outside="showCategoryMenu = false"
+                    x-transition
+                    @click.outside="showCategoryMenu = false; showSortMenu = false"
                     class="absolute right-0 top-8 z-30 w-56 bg-white border rounded-xl shadow-lg py-2"
                 >
-                <button
-                    class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                    @click="openManageCategories"
-                >
-                    Manage Categories
-                </button>
-
-                    {{-- <button class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100">
-                        Search
-                    </button> --}}
-                    <button class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100">
-                        Sort by
+                    <!-- MANAGE -->
+                    <button
+                        class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                        @click="openManageCategories"
+                    >
+                        Manage Categories
                     </button>
+
+                    <!-- SORT BY -->
+                    <button
+                        class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex justify-between"
+                        @click.stop="showSortMenu = !showSortMenu"
+                    >
+                        Sort by
+                        <span>›</span>
+                    </button>
+                </div>
+
+                <!-- SORT BY SUBMENU (SEPARATE, SIBLING) -->
+                <div
+                    x-show="showSortMenu"
+                    x-transition
+                    @click.outside="showSortMenu = false"
+                    class="absolute right-full top-8 mr-2 z-40 w-64 bg-white border rounded-xl shadow-lg p-3"
+                >
+                    <p class="text-sm font-semibold mb-2">
+                        Sort tasks by
+                    </p>
+
+                    <label class="flex items-center gap-2 text-sm mb-2 cursor-pointer">
+                        <input
+                            type="radio"
+                            name="sort"
+                            value="due"
+                            :checked="sortMode === 'due'"
+                            @change="changeSort('due')"
+                        >
+                        Due date
+                    </label>
+
+                    <label class="flex items-center gap-2 text-sm mb-2 cursor-pointer">
+                        <input
+                            type="radio"
+                            name="sort"
+                            value="created"
+                            :checked="sortMode === 'created'"
+                            @change="changeSort('created')"
+                        >
+                        Task created
+                    </label>
+
+                    <label class="flex items-center gap-2 text-sm cursor-pointer">
+                        <input
+                            type="radio"
+                            name="sort"
+                            value="manual"
+                            :checked="sortMode === 'manual'"
+                            @change="changeSort('manual')"
+                        >
+                        Manual (long press to sort)
+                    </label>
                 </div>
             </div>
 
+
         </div>
+
+
+
         <div x-show="showManageCategories">
             <div
                 class="fixed inset-0 bg-black/30 z-40 flex items-center justify-center"
@@ -176,23 +231,52 @@
             </div>
         </template>
 
-        <template x-for="task in tasks" :key="task.id">
-            <div
-                class="relative p-3 mb-2 rounded cursor-pointer flex items-center justify-between bg-white hover:bg-gray-100"
-                @click="selectTask(task.id)"
-            >
-                <!-- LEFT: CHECKBOX + TITLE -->
-                <div class="flex items-center gap-3">
-                    <input
-                        type="checkbox"
-                        @click.stop="toggleStatus(task.id)"
-                        :checked="task.status === 'done'"
-                    >
-                    <span
-                        x-text="task.title"
-                        :class="task.status === 'done' ? 'line-through text-gray-400' : ''"
-                    ></span>
-                </div>
+            <template x-for="task in tasks" :key="task.id">
+                <div
+                    class="relative p-3 mb-2 rounded flex items-center justify-between cursor-pointer"
+                    :class="
+                        selectedTask && selectedTask.id === task.id
+                            ? 'bg-gray-200'
+                            : 'bg-white hover:bg-gray-100'
+                    "
+                    @click="selectTask(task.id)"
+                >
+
+                    <!-- LEFT: DRAG HANDLE + CHECKBOX + TITLE -->
+                    <div class="flex items-center gap-3">
+
+                        <!-- DRAG HANDLE (ONLY THIS CAN DRAG, ONLY IN MANUAL MODE) -->
+                        <span
+                            class="select-none text-gray-400"
+                            :class="sortMode === 'manual'
+                                ? 'cursor-grab'
+                                : 'cursor-not-allowed opacity-40'"
+                            :draggable="sortMode === 'manual'"
+                            @dragstart="sortMode === 'manual' && onDragStart(task.id)"
+                            @dragover.prevent="sortMode === 'manual'"
+                            @drop="sortMode === 'manual' && onDrop(task.id)"
+                            @click.stop
+                        >
+                            ☰
+                        </span>
+
+
+                        <!-- CHECKBOX -->
+                        <input
+                            type="checkbox"
+                            @click.stop="toggleStatus(task.id)"
+                            :checked="task.status === 'done'"
+                        >
+
+                        <!-- TITLE -->
+                        <span
+                            x-text="task.title"
+                            :class="task.status === 'done'
+                                ? 'line-through text-gray-400'
+                                : ''"
+                        ></span>
+                    </div>
+
 
                 <!-- RIGHT: PRIORITY -->
                 <div
@@ -254,6 +338,67 @@
         >
             + Add Task
         </button>
+
+
+        <div class="mt-6 pt-4 border-t">
+            <button
+                class="text-sm text-gray-500 hover:text-indigo-600 flex items-center gap-2"
+                @click="openCompletedTasks"
+            >
+                ✓ Check all completed tasks
+            </button>
+        </div>
+
+        <template x-if="showCompletedModal">
+            <div class="fixed inset-0 bg-black/40 z-50 flex justify-center items-center">
+                <div
+                    class="bg-white w-full max-w-lg max-h-[80vh] rounded-xl shadow-lg p-4 overflow-y-auto"
+                    @click.outside="closeCompletedTasks"
+                >
+                    <!-- HEADER -->
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="font-semibold">Completed Tasks</h2>
+                        <button @click="closeCompletedTasks">✕</button>
+                    </div>
+
+                    <!-- LOADING -->
+                    <template x-if="loadingCompleted">
+                        <p class="text-sm text-gray-400">Loading...</p>
+                    </template>
+
+                    <!-- GROUPED LIST -->
+                    <template x-for="[date, tasks] in Object.entries(completedGroups)" :key="date">
+                        <div class="mb-4">
+                            <h3 class="text-sm font-semibold text-gray-500 mb-2">
+                                Completed Time — <span x-text="date"></span>
+                            </h3>
+
+                            <div class="space-y-2">
+                                <template x-for="task in tasks" :key="task.id">
+                                    <div class="flex items-center gap-3 bg-gray-100 rounded px-3 py-2">
+                                        <input type="checkbox" checked disabled>
+
+                                        <span
+                                            class="line-through text-gray-500 text-sm"
+                                            x-text="task.title"
+                                        ></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- EMPTY -->
+                    <template x-if="!loadingCompleted && Object.keys(completedGroups).length === 0">
+                        <p class="text-sm text-gray-400">
+                            No completed tasks yet
+                        </p>
+                    </template>
+                </div>
+            </div>
+        </template>
+
+
     </div>
 
 
@@ -342,46 +487,66 @@
                         Subtask
                     </label>
 
-                    <!-- LIST -->
+                    <!-- SUBTASK LIST -->
                     <template x-for="subtask in selectedTask.subtasks" :key="subtask.id">
-                        <div class="flex items-center gap-2 mb-2">
+                        <div
+                            class="flex items-center gap-2 mb-2"
+                            @dragover.prevent
+                            @drop="onSubtaskDrop(subtask.id)"
+                        >
+                            <!-- DRAG HANDLE (ONLY HERE) -->
+                            <span
+                                class="cursor-grab text-gray-400 select-none"
+                                draggable="true"
+                                @dragstart="onSubtaskDragStart(subtask.id)"
+                            >
+                                ☰
+                            </span>
+
+                            <!-- CHECKBOX -->
                             <input
                                 type="checkbox"
                                 :checked="subtask.status === 'done'"
                                 @change="toggleSubtask(subtask)"
                             >
 
-                            <!-- VIEW -->
-                            <template x-if="editingSubtaskId !== subtask.id">
-                                <span
-                                    class="flex-1 cursor-pointer"
-                                    :class="subtask.status === 'done'
-                                        ? 'line-through text-gray-400'
-                                        : ''"
-                                    @click="startEditSubtask(subtask)"
-                                    x-text="subtask.content"
-                                ></span>
-                            </template>
+                            <!-- CONTENT -->
+                            <div class="flex-1">
+                                <!-- VIEW -->
+                                <template x-if="editingSubtaskId !== subtask.id">
+                                    <span
+                                        class="cursor-pointer block"
+                                        :class="subtask.status === 'done'
+                                            ? 'line-through text-gray-400'
+                                            : ''"
+                                        @click="startEditSubtask(subtask)"
+                                        x-text="subtask.content"
+                                    ></span>
+                                </template>
 
-                            <!-- EDIT -->
-                            <template x-if="editingSubtaskId === subtask.id">
-                                <input
-                                    :id="`edit-subtask-${subtask.id}`"
-                                    class="flex-1 border rounded px-2 py-1 text-sm"
-                                    x-model="subtask.content"
-                                    @keydown.enter="saveSubtask(subtask)"
-                                    @blur="saveSubtask(subtask)"
-                                >
-                            </template>
+                                <!-- EDIT -->
+                                <template x-if="editingSubtaskId === subtask.id">
+                                    <input
+                                        :id="`edit-subtask-${subtask.id}`"
+                                        class="w-full border rounded px-2 py-1 text-sm"
+                                        x-model="subtask.content"
+                                        @keydown.enter.prevent="saveSubtask(subtask)"
+                                        @keydown.escape="editingSubtaskId = null"
+                                        @blur="saveSubtask(subtask)"
+                                    >
+                                </template>
+                            </div>
 
+                            <!-- DELETE -->
                             <button
-                                class="text-red-500 text-sm"
+                                class="text-red-500 text-sm px-1"
                                 @click="deleteSubtask(subtask)"
                             >
                                 ✕
                             </button>
                         </div>
                     </template>
+
 
                     <!-- ADD -->
                     <template x-if="addingSubtask">
@@ -418,6 +583,8 @@
 
             </div>
         </div>
+
+
     </template>
 </div>
 <script>
@@ -460,6 +627,18 @@ document.addEventListener('alpine:init', () => {
         searchTimeout: null,
 
 
+        draggingTaskId: null,
+
+        draggingSubtaskId: null,
+
+        showSortMenu: false,
+
+        sortMode: 'manual', 
+        // 'due' | 'created' | 'manual'
+
+        showCompletedModal: false,
+        completedGroups: {},
+        loadingCompleted: false,
         /* =====================
            INIT
         ===================== */
@@ -495,6 +674,8 @@ document.addEventListener('alpine:init', () => {
                     url += `q=${encodeURIComponent(this.searchQuery)}&`;
                 }
 
+                url += `sort=${this.sortMode}`;
+                
                 const res = await fetch(url);
                 const data = await res.json();
 
@@ -1008,6 +1189,125 @@ document.addEventListener('alpine:init', () => {
                 alert('Gagal menghapus category');
             }
         },
+
+
+        onDragStart(taskId) {
+            if (this.sortMode !== 'manual') return;
+            this.draggingTaskId = taskId;
+        },
+
+        onDragOver(event) {
+            event.preventDefault();
+        },
+
+
+        async onDrop(targetTaskId) {
+            if (this.draggingTaskId === null) return;
+
+            const fromIndex = this.tasks.findIndex(t => t.id === this.draggingTaskId);
+            const toIndex = this.tasks.findIndex(t => t.id === targetTaskId);
+
+            if (fromIndex === -1 || toIndex === -1) return;
+
+            // reorder locally
+            const moved = this.tasks.splice(fromIndex, 1)[0];
+            this.tasks.splice(toIndex, 0, moved);
+
+            this.draggingTaskId = null;
+
+            // persist
+            try {
+                await fetch('/tasks/reorder', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document
+                            .querySelector('meta[name="csrf-token"]')
+                            .getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        order: this.tasks.map(t => t.id)
+                    })
+                });
+            } catch {
+                alert('Gagal menyimpan urutan');
+                await this.loadTasks();
+            }
+        },
+
+        onSubtaskDragStart(id) {
+            this.draggingSubtaskId = id;
+        },
+
+        onSubtaskDragOver(e) {
+            e.preventDefault();
+        },
+
+        async onSubtaskDrop(targetId) {
+            if (!this.selectedTask || this.draggingSubtaskId === null) return;
+
+            const list = this.selectedTask.subtasks;
+            const from = list.findIndex(s => s.id === this.draggingSubtaskId);
+            const to = list.findIndex(s => s.id === targetId);
+
+            if (from === -1 || to === -1) return;
+
+            const moved = list.splice(from, 1)[0];
+            list.splice(to, 0, moved);
+
+            this.draggingSubtaskId = null;
+
+            try {
+                await fetch(`/tasks/${this.selectedTask.id}/subtasks/reorder`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document
+                            .querySelector('meta[name="csrf-token"]')
+                            .getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        order: list.map(s => s.id)
+                    })
+                });
+            } catch {
+                alert('Gagal menyimpan urutan subtask');
+                await this.selectTask(this.selectedTask.id);
+            }
+        },
+
+        openSortMenu() {
+            this.showSortMenu = true;
+        },
+
+        closeSortMenu() {
+            this.showSortMenu = false;
+        },
+
+        async changeSort(mode) {
+            this.sortMode = mode;
+            this.showSortMenu = false;
+            await this.loadTasks();
+        },
+        async openCompletedTasks() {
+            this.showCompletedModal = true;
+            this.loadingCompleted = true;
+
+            try {
+                const res = await fetch('/tasks/completed');
+                const data = await res.json();
+                this.completedGroups = data.groups ?? {};
+            } catch {
+                alert('Gagal load completed tasks');
+            } finally {
+                this.loadingCompleted = false;
+            }
+        },
+
+        closeCompletedTasks() {
+            this.showCompletedModal = false;
+        },
+
 
 
     }))

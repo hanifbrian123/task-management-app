@@ -25,11 +25,13 @@ class TaskController extends Controller
     {
         $categoryId = $request->query('category_id');
         $search = $request->query('q');
+        $sort = $request->query('sort', 'manual');
 
         $tasks = $this->taskService->getTasksForUser(
             $request->user(),
             $categoryId,
-            $search
+            $search,
+            $sort
         );
 
         return response()->json([
@@ -220,7 +222,6 @@ class TaskController extends Controller
             'priority' => 'nullable|integer|min:1|max:5',
         ]);
         
-        Log::info('validate debug', [$validated]);
         
         $task = $this->taskService->updatePriority(
             $request->user(),
@@ -230,6 +231,51 @@ class TaskController extends Controller
         
         
         return response()->json(['task' => $task]);
+    }
+
+
+    public function reorder(Request $request)
+    {
+        $validated = $request->validate([
+            'order' => 'required|array',
+            'order.*' => 'integer',
+        ]);
+
+        $this->taskService->reorderTasks(
+            $request->user(),
+            $validated['order']
+        );
+
+        return response()->json(['success' => true]);
+    }
+    public function reorderSubtasks(Request $request, int $taskId)
+    {
+        $validated = $request->validate([
+            'order' => 'required|array',
+            'order.*' => 'integer',
+        ]);
+
+        $this->taskService->reorderSubtasks(
+            $request->user(),
+            $taskId,
+            $validated['order']
+        );
+
+        return response()->json(['success' => true]);
+    }
+
+    public function completed(Request $request)
+    {
+        
+        $groups = $this->taskService->getCompletedTasksGrouped(
+            $request->user()
+        );
+        
+        Log::info('completed tasks debug', ['groups' => $groups]);
+
+        return response()->json([
+            'groups' => $groups
+        ]);
     }
 
 }

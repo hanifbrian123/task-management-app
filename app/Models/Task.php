@@ -13,7 +13,14 @@ class Task extends Model
         'priority',
         'status',
         'reminder_at',
+        'position',
         'user_id',
+    ];
+
+    protected $casts = [
+        'completed_at' => 'datetime',
+        'due' => 'date',          // optional tapi sangat disarankan
+        'reminder_at' => 'datetime',
     ];
 
     public function user()
@@ -28,6 +35,8 @@ class Task extends Model
 
     public function subtasks()
     {
-        return $this->hasMany(Subtask::class);
+        return $this->hasMany(Subtask::class)->orderBy('position', 'asc');
     }
+
+
 }
