@@ -14,6 +14,7 @@ class Task extends Model
         'status',
         'reminder_at',
         'position',
+        'completed_at',
         'user_id',
     ];
 

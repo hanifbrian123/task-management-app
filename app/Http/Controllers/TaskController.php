@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Services\TaskService;
 use Illuminate\Support\Facades\Log;
-
+use App\Models\Task;
 
 class TaskController extends Controller
 {
@@ -277,5 +277,36 @@ class TaskController extends Controller
             'groups' => $groups
         ]);
     }
+    public function completedPage(Request $request)
+    {
+        return view('completed'); // buat file blade ini
+    }
+
+    public function taskDates(Request $request)
+    {
+        $dates = Task::where('user_id', $request->user()->id)
+            ->whereNotNull('due')
+            ->where('status', 'yet')
+            ->selectRaw('DATE(due) as date')
+            ->distinct()
+            ->pluck('date')
+            ->toArray();
+
+        return response()->json(['dates' => $dates]);
+    }
+
+    public function tasksByDate(Request $request)
+    {
+        $date = $request->query('date');
+
+        $tasks = Task::where('user_id', $request->user()->id)
+            ->whereDate('due', $date)
+            ->where('status', 'yet')
+            ->orderBy('priority', 'desc')
+            ->get();
+
+        return response()->json(['tasks' => $tasks]);
+    }
+
 
 }

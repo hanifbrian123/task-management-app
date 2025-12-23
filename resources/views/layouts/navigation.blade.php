@@ -15,6 +15,13 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('tasks.completed.page')" :active="request()->routeIs('tasks.completed.page')">
+                        {{ __('Completed Tasks') }}
+                    </x-nav-link>
+                    <x-nav-link :href="route('calendar')" :active="request()->routeIs('calendar')">
+                        {{ __('Calendar') }}
+                    </x-nav-link>
+
                 </div>
             </div>
 

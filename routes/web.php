@@ -81,5 +81,16 @@ Route::post('/tasks/{taskId}/subtasks/reorder', [TaskController::class, 'reorder
     ->middleware('auth');
 Route::get('/tasks/completed', [TaskController::class, 'completed'])
     ->middleware('auth');
+Route::get('/completed-tasks', [TaskController::class, 'completedPage'])
+    ->middleware(['auth', 'verified'])
+    ->name('tasks.completed.page');
 
+
+Route::get('/calendar', fn() => view('calendar'))->middleware('auth')->name('calendar');
+
+Route::get('/tasks/dates', [TaskController::class, 'taskDates'])
+    ->middleware('auth');
+
+Route::get('/tasks/by-date', [TaskController::class, 'tasksByDate'])
+    ->middleware('auth');
 require __DIR__.'/auth.php';

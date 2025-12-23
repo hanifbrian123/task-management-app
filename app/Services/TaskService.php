@@ -98,6 +98,13 @@ class TaskService
             ->firstOrFail();
 
         $task->status = $task->status === 'yet' ? 'done' : 'yet';
+        // log::info('task status d', [
+        //     'new_status' => $task->status
+        // ]);
+        $task->completed_at = $task->status === 'done' ? now() : null;
+        // log::info('task completed_at d', [
+        //     'completed_at' => $task->completed_at
+        // ]);
         $task->save();
 
         return $task;
@@ -305,12 +312,22 @@ class TaskService
     }
     public function getCompletedTasksGrouped(User $user)
     {
-        // // Log::info('Completed debug', ['class' => $task->completed_at);
+        Log::info('Completed debug 2', ['user_id' => $user->id]);
         // dd(
         //     get_class($task->completed_at),
         //     $task->completed_at
         // );
-        // return Task::query()
+        return Task::query()
+            ->where('user_id', $user->id)
+            ->where('status', 'done')
+            ->whereNotNull('completed_at') 
+            ->orderBy('completed_at', 'desc')
+            ->get()
+            ->groupBy(function ($task) {
+                return $task->completed_at->format('Y/m/d');
+            });
+
+        // $task = Task::query()
         //     ->where('user_id', $user->id)
         //     ->where('status', 'done')
         //     ->whereNotNull('completed_at') 
@@ -319,22 +336,12 @@ class TaskService
         //     ->groupBy(function ($task) {
         //         return $task->completed_at->format('Y/m/d');
         //     });
+        // Log::info('getCompletedTasksGrouped d', ['class' => get_class($task->completed_at)]);
 
-        $task = Task::query()
-        //     ->where('user_id', $user->id)
-        //     ->where('status', 'done')
-        //     ->whereNotNull('completed_at') 
-        //     ->orderBy('completed_at', 'desc')
-        //     ->get()
-        //     ->groupBy(function ($task) {
-        //         return $task->completed_at->format('Y/m/d');
-        //     });
-        Log::info('Completed debug', ['class' => get_class($task->completed_at)]);
-
-        dd(
-            $task?->completed_at,
-            $task ? get_class($task->completed_at) : null
-        );
+        // dd(
+        //     $task?->completed_at,
+        //     $task ? get_class($task->completed_at) : null
+        // );
     }
 
 
