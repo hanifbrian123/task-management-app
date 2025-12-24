@@ -83,6 +83,8 @@ Gunakan salah satu:
 - PostgreSQL
 - SQLite
 
+
+### 5. Pastikan web server (xampp, larago, etc.) dan database berjalan
 ---
 
 ## Installation & Setup
