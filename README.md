@@ -90,7 +90,7 @@ Gunakan salah satu:
 ### 1. Clone Repository
 ```bash
 git clone https://github.com/hanifbrian123/task-management-app.git
-cd nama-project
+cd task-management-app
 ```
 
 ### 2. Install Dependencies via Composer
@@ -109,12 +109,12 @@ php artisan key:generate
 ```
 
 ### 5. Konfigurasi Database
-Edit `.env`:
+Edit `.env`. Atur konfigurasi database misalnya:
 ```
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=nama_database
+DB_DATABASE=task_management
 DB_USERNAME=root
 DB_PASSWORD=
 ```
