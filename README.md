@@ -120,11 +120,12 @@ DB_PASSWORD=
 ```
 
 ### 6. Migrasi Database
+Pastikan sudah membuat database sesuai dengan konfigurasi di .env.
 ```bash
 php artisan migrate
 ```
 
-(Opsional) Jalankan seeder:
+Jalankan seeder:
 ```bash
 php artisan db:seed
 ```
@@ -140,20 +141,16 @@ Atau untuk development:
 npm run dev
 ```
 
-### 8. Storage Link Untuk Upload File
-```bash
-php artisan storage:link
-```
-
-### 9. Jalankan Server Laravel
+### 8. Jalankan Server Laravel
 ```bash
 php artisan serve
 ```
 
-Aplikasi dapat diakses melalui:
-```
-http://127.0.0.1:8000
-```
+Aplikasi dapat diakses melalui: `http://127.0.0.1:8000/login`. Untuk mendemokan aplikasi, bisa dengan login berikut:
+- Username : `demo@test.com`
+- Password : `password`
+
+
 
 ---
 
@@ -200,7 +197,7 @@ php artisan serve
 3. Setup `.env`  
 4. Generate key  
 5. Migrate DB  
-6. (Opsional) npm install  
+6. npm install  
 7. php artisan serve  
 
 Aplikasi siap dijalankan.
