@@ -89,7 +89,7 @@ Gunakan salah satu:
 
 ### 1. Clone Repository
 ```bash
-git clone <URL_REPOSITORY_ANDA>
+git clone https://github.com/hanifbrian123/task-management-app.git
 cd nama-project
 ```
 
