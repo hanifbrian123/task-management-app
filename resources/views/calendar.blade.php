@@ -23,20 +23,24 @@
         </div>
 
         <div class="grid grid-cols-7 gap-2">
-            <template x-for="day in days" :key="day.date">
-                <div
-                    class="aspect-square rounded flex items-center justify-center relative cursor-pointer"
-                    :class="{
-                        'bg-indigo-600 text-white': day.date === selectedDate,
-                        'hover:bg-gray-200': day.date !== selectedDate
-                    }"
-                    @click="selectDate(day.date)"
-                >
-                    <span x-text="day.day"></span>
+            <template x-for="(day, idx) in days" :key="idx">
+                <div>
+                    <template x-if="day.date">
+                        <div
+                            class="aspect-square rounded flex items-center justify-center relative cursor-pointer"
+                            :class="{
+                                'bg-indigo-600 text-white': day.date === selectedDate,
+                                'hover:bg-gray-200': day.date !== selectedDate
+                            }"
+                            @click="selectDate(day.date)"
+                        >
+                            <span x-text="day.day"></span>
 
-                    <!-- DOT IF HAS TASK -->
-                    <template x-if="taskDates.includes(day.date)">
-                        <div class="absolute bottom-2 w-2 h-2 rounded-full bg-indigo-600"></div>
+                            <!-- DOT IF HAS TASK -->
+                            <template x-if="taskDates.includes(day.date)">
+                                <div class="absolute bottom-2 w-2 h-2 rounded-full bg-indigo-600"></div>
+                            </template>
+                        </div>
                     </template>
                 </div>
             </template>
@@ -180,13 +184,13 @@
                             @drop="onSubtaskDrop(subtask.id)"
                         >
                             <!-- DRAG HANDLE -->
-                            <span
+                            {{-- <span
                                 class="cursor-grab text-gray-400 select-none"
                                 draggable="true"
                                 @dragstart="onSubtaskDragStart(subtask.id)"
                             >
                                 ☰
-                            </span>
+                            </span> --}}
 
                             <!-- CHECKBOX -->
                             <input
@@ -309,12 +313,22 @@ document.addEventListener('alpine:init', () => {
         buildCalendar() {
             const first = new Date(this.year, this.month, 1);
             const last = new Date(this.year, this.month + 1, 0);
+            const startingDayOfWeek = first.getDay(); // 0 = Sunday, 1 = Monday, etc
 
             const result = [];
 
+            // Add empty days from previous month
+            for (let i = 0; i < startingDayOfWeek; i++) {
+                result.push({ day: null, date: null });
+            }
+
+            // Add days of current month
             for (let d = 1; d <= last.getDate(); d++) {
-                const date = new Date(this.year, this.month, d)
-                    .toISOString().slice(0, 10);
+                const dateObj = new Date(this.year, this.month, d);
+                const year = dateObj.getFullYear();
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const day = String(dateObj.getDate()).padStart(2, '0');
+                const date = `${year}-${month}-${day}`;
 
                 result.push({ day: d, date });
             }
