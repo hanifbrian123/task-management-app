@@ -110,17 +110,17 @@ cp .env.example .env
 php artisan key:generate
 ```
 
-### 5. Konfigurasi Database
-Edit `.env`. Atur konfigurasi database misalnya:
+### 5. Buat dan Konfigurasi Database
+Buat database misalnya dengan nama: `task_management`
+Edit `.env`. Atur konfigurasi database sesuai dengan nama database. misalnya:
 ```
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=task_management
-DB_USERNAME=root
-DB_PASSWORD=
+DB_CONNECTION=mysql <-jenis database mysql
+DB_HOST=127.0.0.1 <-database host
+DB_PORT=3306 <-port yang digunakan untuk menjalankan database
+DB_DATABASE=task_management <-nama database
+DB_USERNAME=root <- username
+DB_PASSWORD= <- password 
 ```
-
 ### 6. Migrasi Database
 Pastikan sudah membuat database sesuai dengan konfigurasi di .env.
 ```bash
